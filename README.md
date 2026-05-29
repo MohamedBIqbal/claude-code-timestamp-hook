@@ -22,11 +22,11 @@ Server logs, crash reports, and metrics all have timestamps. When Claude reads `
 
 ## The Fix
 
-A 6-line shell script that runs on every prompt via Claude Code's hook system. It injects the current wall-clock time (with timezone) into Claude's context as `additionalContext`, making time a first-class signal in every response.
+A 6-line shell script that runs on every prompt via Claude Code's hook system. It injects the current wall-clock time (with timezone) into Claude's context as `additionalContext` and displays it in the UI status bar via `statusMessage`.
 
-**Before:** Claude guesses. Sometimes it calls `date` manually if it remembers to. Usually it doesn't.
+**Before:** Claude guesses. Sometimes it calls `date` manually if it remembers to. Usually it doesn't. You can't see what time Claude thinks it is.
 
-**After:** Claude knows the current time on every turn, automatically. No prompting required. Elapsed time calculations, log correlation, and process monitoring become reliable.
+**After:** Claude knows the current time on every turn, automatically. The timestamp is also visible to you in the status bar. No prompting required. Elapsed time calculations, log correlation, and process monitoring become reliable.
 
 ## Installation
 
@@ -100,14 +100,17 @@ Restart Claude Code (or start a new session), then send any message. Claude shou
 ```bash
 # Quick test outside Claude Code:
 .claude/hooks/timestamp-inject.sh
-# Output: {"additionalContext":"Current time: 2026-05-28 14:30:00 EDT"}
+# Output: {"additionalContext":"Current time: 2026-05-28 14:30:00 EDT","statusMessage":"2026-05-28 14:30:00 EDT"}
 ```
 
 ## How It Works
 
-Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) run shell commands at specific lifecycle events. The `UserPromptSubmit` event fires on every user message. The hook's JSON output with an `additionalContext` field is injected into Claude's context for that turn.
+Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) run shell commands at specific lifecycle events. The `UserPromptSubmit` event fires on every user message. The hook's JSON output supports two fields:
 
-The hook runs `date` once per prompt (~2ms) and returns the formatted timestamp. No network calls, no dependencies, no state.
+- **`additionalContext`** — injected into Claude's system context (invisible to user, visible to Claude)
+- **`statusMessage`** — displayed in the UI status bar (visible to user)
+
+The hook runs `date` once per prompt (~2ms) and returns the formatted timestamp in both fields. No network calls, no dependencies, no state.
 
 ## Cost
 
